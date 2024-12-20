@@ -11,29 +11,45 @@
 int output_tensor[NUM_KERNELS][(INPUT_HEIGHT - KERNEL_HEIGHT + 2 * PADDING) / STRIDE + 1]
                             [(INPUT_WIDTH - KERNEL_WIDTH + 2 * PADDING) / STRIDE + 1];
 
-// Function to perform im2col
-void im2col(const int input_tensor[INPUT_BATCH][INPUT_HEIGHT][INPUT_WIDTH][KERNEL_CHANNELS], float *col_matrix, int batch) {
+// Function to perform channel-wise parallel im2col
+void im2col_channel_parallel(const int input_tensor[INPUT_BATCH][INPUT_HEIGHT][INPUT_WIDTH][KERNEL_CHANNELS],
+                             float *col_matrix, int batch, int rank, int num_procs) {
+    int channels_per_proc = KERNEL_CHANNELS / num_procs;
+    int start_channel = rank * channels_per_proc;
+    int end_channel = (rank + 1) * channels_per_proc;
+
+    // Handle any remaining channels in the last process
+    if (rank == num_procs - 1) {
+        end_channel = KERNEL_CHANNELS;
+    }
+
     int output_height = (INPUT_HEIGHT - KERNEL_HEIGHT + 2 * PADDING) / STRIDE + 1;
     int output_width = (INPUT_WIDTH - KERNEL_WIDTH + 2 * PADDING) / STRIDE + 1;
+    int col_size_per_channel = KERNEL_HEIGHT * KERNEL_WIDTH * output_height * output_width;
+    float *local_col_matrix = (float *)calloc(channels_per_proc * col_size_per_channel, sizeof(float));
 
-    int col_idx = 0;
-    for (int c = 0; c < INPUT_CHANNELS; c++) {
+    int local_col_idx = 0;
+    for (int c = start_channel; c < end_channel; c++) {
         for (int kh = 0; kh < KERNEL_HEIGHT; kh++) {
             for (int kw = 0; kw < KERNEL_WIDTH; kw++) {
                 for (int oh = 0; oh < output_height; oh++) {
                     for (int ow = 0; ow < output_width; ow++) {
                         int ih = oh * STRIDE + kh - PADDING;
                         int iw = ow * STRIDE + kw - PADDING;
-
                         if (ih >= 0 && iw >= 0 && ih < INPUT_HEIGHT && iw < INPUT_WIDTH)
-                            col_matrix[col_idx++] = (float)input_tensor[batch][ih][iw][c];
+                            local_col_matrix[local_col_idx++] = (float)input_tensor[batch][ih][iw][c];
                         else
-                            col_matrix[col_idx++] = 0.0f;  // Zero padding
+                            local_col_matrix[local_col_idx++] = 0.0f;  // Zero padding
                     }
                 }
             }
         }
     }
+
+    // Gather the results from all processes
+    MPI_Allgather(local_col_matrix, channels_per_proc * col_size_per_channel, MPI_FLOAT, 
+                  col_matrix, channels_per_proc * col_size_per_channel, MPI_FLOAT, MPI_COMM_WORLD);
+    free(local_col_matrix);
 }
 
 void kernel_wise_convolution(int rank, int num_procs) {
@@ -45,17 +61,10 @@ void kernel_wise_convolution(int rank, int num_procs) {
     int output_width = (INPUT_WIDTH - KERNEL_WIDTH + 2 * PADDING) / STRIDE + 1;
     int col_size = KERNEL_CHANNELS * KERNEL_HEIGHT * KERNEL_WIDTH * output_height * output_width;
 
-    // Dynamically allocate memory for input_tensor on non-root processes
-    int (*local_input_tensor)[INPUT_HEIGHT][INPUT_WIDTH][KERNEL_CHANNELS] = NULL;
-    if (rank != 0) {
-        local_input_tensor = malloc(INPUT_BATCH * INPUT_HEIGHT * INPUT_WIDTH * KERNEL_CHANNELS * sizeof(int));
-    }
+    float *col_matrix = (float *)malloc(col_size * sizeof(float));
+    im2col_channel_parallel(input_tensor, col_matrix, 0, rank, num_procs);
+    // Broadcast the col_matrix to all processes
 
-    // Broadcast the input_tensor to all processes
-    MPI_Bcast(rank == 0 ? input_tensor : local_input_tensor, 
-              INPUT_BATCH * INPUT_HEIGHT * INPUT_WIDTH * KERNEL_CHANNELS, MPI_INT, 0, MPI_COMM_WORLD);
-
-    float *col_matrix = calloc(col_size, sizeof(float));
     float *kernel_matrix = malloc(kernels_per_proc * INPUT_CHANNELS * KERNEL_HEIGHT * KERNEL_WIDTH * sizeof(float));
     float *output_matrix = calloc(kernels_per_proc * output_height * output_width, sizeof(float));
 
@@ -69,9 +78,6 @@ void kernel_wise_convolution(int rank, int num_procs) {
             }
         }
     }
-
-    // Perform im2col transformation
-    im2col(rank == 0 ? input_tensor : local_input_tensor, col_matrix, 0);
 
     // Perform matrix multiplication using OpenBLAS
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, kernels_per_proc, output_height * output_width, INPUT_CHANNELS * KERNEL_HEIGHT * KERNEL_WIDTH,
@@ -95,10 +101,6 @@ void kernel_wise_convolution(int rank, int num_procs) {
     free(col_matrix);
     free(kernel_matrix);
     free(output_matrix);
-
-    if (rank != 0) {
-        free(local_input_tensor); // Free memory allocated for non-root processes
-    }
 }
 
 void save_output_to_file(const char *file_name, const char *file_time, double max_time) {
