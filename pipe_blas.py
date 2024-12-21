@@ -2,9 +2,9 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-channel_sizes = [1024]
-kernel_sizes = [128]
-np_values = [64]  # Number of processes to test
+channel_sizes = [512,1024,2048]
+kernel_sizes = [128,256,512]
+np_values = [4,8,16,32,64]  # Number of processes to test
 
 def update_config(input_channels, kernel_size, np_value):
     config_template = f"""#ifndef CONFIG_H
@@ -51,13 +51,13 @@ def collect_execution_times(filenames):
 def plot_all_execution_times(channel_sizes, kernel_sizes, np_values, ch_kernel_collections):
     execution_times = np.array(ch_kernel_collections)
 
-    plt.figure(figsize=(14, 8))
+    plt.figure(figsize=(20, 12))  # Further increase in figure size
 
     x_labels = [
         f"{channel},{kernel},{np_value}"
-        for np_value in np_values
         for channel in channel_sizes
         for kernel in kernel_sizes
+        for np_value in np_values
     ]
     x = np.arange(len(x_labels))
 
@@ -71,14 +71,14 @@ def plot_all_execution_times(channel_sizes, kernel_sizes, np_values, ch_kernel_c
     plt.plot(x, time_ch_wise, label='Channel-Wise Conv Time', marker='^')
     plt.plot(x, time_kh_wise, label='Kernel-Wise Conv Time', marker='d')
 
-    plt.title("Execution Times for All Configurations")
+    plt.title("Blas Optimized Kernel-Channel Wise and Simple Convolution Configurations (Kernel-Wise Not Optimized)")
     plt.xlabel("Configurations (Channel, Kernel, np)")
     plt.ylabel("Execution Time (s)")
     plt.xticks(x, x_labels, rotation=90, ha="center")
     plt.legend()
     plt.grid(True, linestyle="--", alpha=0.7)
 
-    filename = "execution_times_combined.png"
+    filename = "execution_times_combined_blasoptimized_wo_kernel.png"
     plt.savefig(filename)
     print(f"Combined plot saved as {filename}")
 
@@ -86,9 +86,9 @@ def plot_all_execution_times(channel_sizes, kernel_sizes, np_values, ch_kernel_c
     plt.show()
 
 ch_kernel_collections = []
-for np_value in np_values:
-    for channels in channel_sizes:
-        for kernel_size in kernel_sizes:
+for channels in channel_sizes:
+    for kernel_size in kernel_sizes:
+        for np_value in np_values:
             itt = 1
             print("**** STARTS ****")
             print("Number of TOTAL CPUs:", os.cpu_count())
@@ -113,28 +113,26 @@ for np_value in np_values:
                 os.system("python3 run_conv.py")
                 os.system("export OPENBLAS_NUM_THREADS=1")
                 os.system("gcc -O3 -o convolution simple_conv_blas.c -I/usr/include/x86_64-linux-gnu/openblas64-pthread -L/usr/lib/x86_64-linux-gnu/openblas64-pthread -lopenblas64 -O3 && ./convolution")
+                #os.system("gcc -std=c99 -o conv.o simple_conv.c -lm -O3 && ./conv.o")
                 os.system("python3 compare.py")
-                os.system(f"mpicc -O3 -o ch_conv_orig.o ch_blas.c -I/usr/include/x86_64-linux-gnu/openblas64-pthread -L/usr/lib/x86_64-linux-gnu/openblas64-pthread -lopenblas64 && mpirun --allow-run-as-root --use-hwthread-cpus -np {np_value} ./ch_conv_orig.o")
+                os.system(f"mpicc -O3 -o ch_conv_orig.o channel_wise_blas.c -I/usr/include/x86_64-linux-gnu/openblas64-pthread -L/usr/lib/x86_64-linux-gnu/openblas64-pthread -lopenblas64 && mpirun --allow-run-as-root --use-hwthread-cpus -np {np_value} ./ch_conv_orig.o")
                 os.system("python3 compare_parallel.py")
                 os.system(f"mpicc -O3 -o kernel_conv.o kernel_wise_blas.c -I/usr/include/x86_64-linux-gnu/openblas64-pthread -L/usr/lib/x86_64-linux-gnu/openblas64-pthread -lopenblas64 && mpirun --allow-run-as-root --use-hwthread-cpus -np {np_value} ./kernel_conv.o")
                 os.system("python3 compare_parallel_kernel.py")
 
-                #os.system(f"mpicc -o ch_conv_orig.o ch_orig.c -lm && mpirun --allow-run-as-root --use-hwthread-cpus -np {np_value} ./ch_conv_orig.o")
-                #os.system(f"mpicc -o kernel_conv.o kernel_wise.c && mpirun --allow-run-as-root --use-hwthread-cpus -np {np_value} ./kernel_conv.o")
-
-                #current_execution = np.array(collect_execution_times(filenames))  # Convert to numpy array
-                #print(f"Current: {current_execution}")
-                #cumulative_execution += current_execution  # Element-wise summation
-                #print(f"Cumulative: {cumulative_execution}")
+                current_execution = np.array(collect_execution_times(filenames))  # Convert to numpy array
+                print(f"Current: {current_execution}")
+                cumulative_execution += current_execution  # Element-wise summation
+                print(f"Cumulative: {cumulative_execution}")
 
                 if itt > 1:  # Exit after 3 iterations for demonstration
-                    #average_execution = cumulative_execution / (itt-1)  # Compute the average
-                    #print(f"Averaged Execution Times: {average_execution}")
-                    #ch_kernel_collections.append(average_execution.tolist())
+                    average_execution = cumulative_execution / (itt-1)  # Compute the average
+                    print(f"Averaged Execution Times: {average_execution}")
+                    ch_kernel_collections.append(average_execution.tolist())
                     print("**** ENDS ****")
                     break
 
-#print("Final execution times array:", ch_kernel_collections)
+print("Final execution times array:", ch_kernel_collections)
 
 # Plot the collected execution times for all configurations
-#plot_all_execution_times(channel_sizes, kernel_sizes, np_values, ch_kernel_collections)
+plot_all_execution_times(channel_sizes, kernel_sizes, np_values, ch_kernel_collections)
