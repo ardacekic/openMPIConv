@@ -51,7 +51,7 @@ def collect_execution_times(filenames):
 def plot_all_execution_times(channel_sizes, kernel_sizes, np_values, ch_kernel_collections):
     execution_times = np.array(ch_kernel_collections)
 
-    plt.figure(figsize=(20, 12))  # Further increase in figure size
+    plt.figure(figsize=(30, 20))  # Further increase in figure size
 
     x_labels = [
         f"{channel},{kernel},{np_value}"

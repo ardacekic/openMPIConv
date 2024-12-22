@@ -120,7 +120,7 @@ for channels in channel_sizes:
                 cumulative_execution += current_execution  # Element-wise summation
                 print(f"Cumulative: {cumulative_execution}")
 
-                if itt > 5:  # Exit after 3 iterations for demonstration
+                if itt > 1:  # Exit after 3 iterations for demonstration
                     average_execution = cumulative_execution / (itt-1)  # Compute the average
                     print(f"Averaged Execution Times: {average_execution}")
                     ch_kernel_collections.append(average_execution.tolist())
