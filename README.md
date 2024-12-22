@@ -20,9 +20,12 @@ To run the programs, clone this repository and use the provided shell scripts:
     cd openMPIConv  
     sh run.sh 
 
+## Results 
+Blas Optimized Version of MPI vs Python(PyTorch) Metrics
+![Blas Optimized Version of MPI vs Python(PyTorch) Metrics](results/execution_times_combined.png)
+Window Convolution Version of MPI vs Python(PyTorch) Metrics
+![Window Convolution Version of MPI vs Python(PyTorch) Metrics](results/window_multiplication_wo_blas.png)
+
 
 ## Contribution 
 Contributions are welcome. Please fork the repository and submit pull requests with your enhancements.
-
- 
-
