@@ -2,9 +2,9 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-channel_sizes = [512,2048]
-kernel_sizes = [128,512]
-np_values = [4,16,64]  # Number of processes to test
+channel_sizes = [2048]
+kernel_sizes = [512]
+np_values = [32]  # Number of processes to test
 
 def update_config(input_channels, kernel_size, np_value):
     config_template = f"""#ifndef CONFIG_H
@@ -13,7 +13,7 @@ def update_config(input_channels, kernel_size, np_value):
 // Input Tensor Configuration
 #define INPUT_BATCH 1
 #define INPUT_HEIGHT 64
-#define INPUT_WIDTH 64
+#define INPUT_WIDTH 64 
 #define INPUT_CHANNELS {input_channels}
 
 // Kernel Configuration
@@ -109,11 +109,12 @@ for channels in channel_sizes:
             for _ in range(100):
                 print(f"Iteration: {itt}")
                 itt += 1
-                
+                os.environ['OPENBLAS_NUM_THREADS'] = '1'
                 os.system("python3 run_conv.py")
-                os.system("gcc -std=c99 -o conv.o simple_conv.c -lm && ./conv.o")
-                os.system(f"mpicc -o ch_conv_orig.o channel_wise.c -lm && mpirun --allow-run-as-root --use-hwthread-cpus -np {np_value} ./ch_conv_orig.o")
+                os.system(f"mpicc -O3 -o ch_conv_orig.o channel_wise_blas_scatter.c -lblas && mpirun --allow-run-as-root --use-hwthread-cpus -np {np_value} ./ch_conv_orig.o")
+                os.system("python3 compare_Blas_CH.py")
                 os.system(f"mpicc -o kernel_conv.o kernel_wise.c && mpirun --allow-run-as-root --use-hwthread-cpus -np {np_value} ./kernel_conv.o")
+                os.system("python3 compare_Blas_KRN.py")
 
                 current_execution = np.array(collect_execution_times(filenames))  # Convert to numpy array
                 print(f"Current: {current_execution}")

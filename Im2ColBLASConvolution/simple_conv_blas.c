@@ -111,7 +111,8 @@ int main() {
 
     double exeTime = (double)(end - start) / CLOCKS_PER_SEC;
     printf("Execution Time with OpenBLAS: %.6f seconds\n", exeTime);
-    save_output_to_file("c_convolution_output.txt", "simple_conv_time.txt", exeTime);
+    save_output_to_file("mpi_convolution_output_BLAS_Simple.txt", "mpi_convolution_output_Simple_time.txt", exeTime);
+
 
     return 0;
 }

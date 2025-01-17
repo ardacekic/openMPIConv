@@ -69,12 +69,15 @@ void save_output_to_file(const char *file_name,const char *time_file, double exe
 }
 
 int main() {
-    clock_t start = clock();
+    //clock_t start = clock();
+    time_t start = time(NULL);
     convolve();
-    clock_t end = clock();
+    time_t end = time(NULL);
 
-    double exeTime = (double)(end-start) / CLOCKS_PER_SEC;
+    //clock_t end = clock();
+
+    double exeTime = (double)(difftime(end, start)) ;
     printf("Execution Time in C: : %.6f seconds \n",exeTime);
-    save_output_to_file("c_convolution_output.txt","simple_conv_time.txt",exeTime);
+    save_output_to_file("mpi_convolution_output_Simple.txt","mpi_convolution_output_Simple_time.txt",exeTime);
     return 0;
 }
