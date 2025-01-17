@@ -39,6 +39,17 @@ Blas Optimized Version of MPI vs Python(PyTorch) Metrics
 Window Convolution Version of MPI vs Python(PyTorch) Metrics
 ![Window Convolution Version of MPI vs Python(PyTorch) Metrics](results/window_multiplication_wo_blas.png)
 
+Window Convolution Version of MPI vs Python(PyTorch) Metrics Densest Layer 
+![Window Convolution Version of MPI vs Python(PyTorch) Metrics](results/window_multiplication_wo_blas_latest.png)
+
+Blas Optimized Version of MPI vs Python(PyTorch) Metrics Densest Layer 
+![Window Convolution Version of MPI vs Python(PyTorch) Metrics](results/blas_multiplication.png)
+
+Blas Optimized Version of MPI vs Python(PyTorch) Metrics Densest Layer Speedup
+![Window Convolution Version of MPI vs Python(PyTorch) Metrics](results/blas_multiplication_plot_speedup_comparison.png)
+
+Window Convolution Version of MPI vs Python(PyTorch) Metrics Densest Layer  Speedup
+![Window Convolution Version of MPI vs Python(PyTorch) Metrics](results/window_multiplication_wo_blas_plot_speedup_comparison.png)
 
 ## Contribution 
 Contributions are welcome. Please fork the repository and submit pull requests with your enhancements.
