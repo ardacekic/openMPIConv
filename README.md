@@ -18,7 +18,15 @@ To run the programs, clone this repository and use the provided shell scripts:
 
     git clone https://github.com/ardacekic/openMPIConv  
     cd openMPIConv  
-    sh run.sh 
+
+You can use WindowConvolution to generate results for Basic Window Convolution Version
+    cd WindowConvolution
+    python3 pipe_window.py
+
+You can use Im2ColBLASConvolution to generate results for BLAS optimized Version
+    cd WindowConvolution
+    python3 pipe_window.py
+
 
 ## Results 
 Blas Optimized Version of MPI vs Python(PyTorch) Metrics
