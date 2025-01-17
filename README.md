@@ -18,7 +18,21 @@ To run the programs, clone this repository and use the provided shell scripts:
 
     git clone https://github.com/ardacekic/openMPIConv  
     cd openMPIConv  
-    sh run.sh 
+
+You can use WindowConvolution to generate results for Basic Window Convolution Version
+
+    cd WindowConvolution
+    python3 pipe_window.py
+
+You can use Im2ColBLASConvolution to generate results for BLAS optimized Version
+
+    cd WindowConvolution
+    python3 pipe_window.py
+
+In each file you can change pipe script to use for different channel-kernel-processes options also you can change kernel and input sizes as well. 
+
+    Default input size 64x64xC and kernel size Nx3x3xC, stride 1, padding 0 assumed for Densest Layer of Resnet50
+
 
 ## Results 
 Blas Optimized Version of MPI vs Python(PyTorch) Metrics
