@@ -20,7 +20,6 @@ To run the programs, clone this repository and use the provided shell scripts:
     cd openMPIConv  
 
 You can use WindowConvolution to generate results for Basic Window Convolution Version
-
     cd WindowConvolution
     python3 pipe_window.py
 
