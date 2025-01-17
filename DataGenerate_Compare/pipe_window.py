@@ -2,9 +2,9 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-channel_sizes = [512,1024,2048]
-kernel_sizes = [128,256,512]
-np_values = [4,8,16,32,64]  # Number of processes to test
+channel_sizes = [2048]
+kernel_sizes = [512]
+np_values = [32]  # Number of processes to test
 
 def update_config(input_channels, kernel_size, np_value):
     config_template = f"""#ifndef CONFIG_H
@@ -13,7 +13,7 @@ def update_config(input_channels, kernel_size, np_value):
 // Input Tensor Configuration
 #define INPUT_BATCH 1
 #define INPUT_HEIGHT 64
-#define INPUT_WIDTH 64
+#define INPUT_WIDTH 64 
 #define INPUT_CHANNELS {input_channels}
 
 // Kernel Configuration
@@ -71,14 +71,14 @@ def plot_all_execution_times(channel_sizes, kernel_sizes, np_values, ch_kernel_c
     plt.plot(x, time_ch_wise, label='Channel-Wise Conv Time', marker='^')
     plt.plot(x, time_kh_wise, label='Kernel-Wise Conv Time', marker='d')
 
-    plt.title("Blas Optimized Kernel-Channel Wise and Simple Convolution Configurations (Kernel-Wise Not Optimized)")
+    plt.title("Execution Times for All Configurations")
     plt.xlabel("Configurations (Channel, Kernel, np)")
     plt.ylabel("Execution Time (s)")
     plt.xticks(x, x_labels, rotation=90, ha="center")
     plt.legend()
     plt.grid(True, linestyle="--", alpha=0.7)
 
-    filename = "execution_times_combined_blasoptimized_wo_kernel.png"
+    filename = "window_multiplication_wo_blas.png"
     plt.savefig(filename)
     print(f"Combined plot saved as {filename}")
 
@@ -109,16 +109,14 @@ for channels in channel_sizes:
             for _ in range(100):
                 print(f"Iteration: {itt}")
                 itt += 1
-
+                os.environ['OPENBLAS_NUM_THREADS'] = '1'
                 os.system("python3 run_conv.py")
-                os.system("export OPENBLAS_NUM_THREADS=1")
-                os.system("gcc -O3 -o convolution simple_conv_blas.c -I/usr/include/x86_64-linux-gnu/openblas64-pthread -L/usr/lib/x86_64-linux-gnu/openblas64-pthread -lopenblas64 -O3 && ./convolution")
-                #os.system("gcc -std=c99 -o conv.o simple_conv.c -lm -O3 && ./conv.o")
+                #os.system(f"mpicc -o conv.o mpi_conv_scatter.c -lm && mpirun --allow-run-as-root -np {np_value} ./conv.o")
+                #os.system(f"mpicc -o ch_conv_orig.o channel_wise_blas_scatter.c -lm && mpirun --allow-run-as-root -np {np_value} ./ch_conv_orig.o")
+                os.system(f"mpicc -O3 -o ch_conv_orig.o channel_wise_blas_scatter.c -lblas && mpirun --allow-run-as-root --use-hwthread-cpus -np {np_value} ./ch_conv_orig.o")
                 os.system("python3 compare.py")
-                os.system(f"mpicc -O3 -o ch_conv_orig.o channel_wise_blas.c -I/usr/include/x86_64-linux-gnu/openblas64-pthread -L/usr/lib/x86_64-linux-gnu/openblas64-pthread -lopenblas64 && mpirun --allow-run-as-root --use-hwthread-cpus -np {np_value} ./ch_conv_orig.o")
-                os.system("python3 compare_parallel.py")
-                os.system(f"mpicc -O3 -o kernel_conv.o kernel_wise_blas.c -I/usr/include/x86_64-linux-gnu/openblas64-pthread -L/usr/lib/x86_64-linux-gnu/openblas64-pthread -lopenblas64 && mpirun --allow-run-as-root --use-hwthread-cpus -np {np_value} ./kernel_conv.o")
-                os.system("python3 compare_parallel_kernel.py")
+                #os.system(f"mpicc -o kernel_conv.o kernel_wise.c && mpirun --allow-run-as-root --use-hwthread-cpus -np {np_value} ./kernel_conv.o")
+                #os.system("python3 compare_parallel_kernel.py")
 
                 current_execution = np.array(collect_execution_times(filenames))  # Convert to numpy array
                 print(f"Current: {current_execution}")

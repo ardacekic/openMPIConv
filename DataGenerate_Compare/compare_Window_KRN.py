@@ -26,4 +26,4 @@ def compare_outputs(file1, file2):
         print("Files match perfectly.")
 
 # Example usage
-compare_outputs("convolution_output.txt", "c_convolution_output.txt")
+compare_outputs("mpi_convolution_output.txt", "mpi_convolution_output_normal.txt")
