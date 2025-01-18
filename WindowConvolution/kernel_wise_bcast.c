@@ -116,7 +116,8 @@ int main(int argc, char **argv) {
         printf("Number of processes: %d\n", num_procs);
     }
     int total_elements = 1 * INPUT_HEIGHT * INPUT_WIDTH * INPUT_CHANNELS;
-
+    // Start timing
+    double start = MPI_Wtime();
     // Now broadcast to all processes.
     MPI_Bcast(
         &input_tensor[0][0][0][0],  // pointer to the first element
@@ -139,7 +140,7 @@ int main(int argc, char **argv) {
         MPI_Finalize();
         return EXIT_FAILURE;
     }
-double start = MPI_Wtime();
+
     //Send Kernel To Processes
     int kernels_per_proc = NUM_KERNELS / num_procs;
     int num_elements = KERNEL_HEIGHT * KERNEL_HEIGHT * KERNEL_CHANNELS * kernels_per_proc;  // Elements per process
@@ -192,11 +193,6 @@ double start = MPI_Wtime();
             }
         }
     }
-
-
-
-    // Start timing
-    
 
     // Perform the kernel-wise convolution
     kernel_wise_convolution(rank, num_procs,local_kernel);
