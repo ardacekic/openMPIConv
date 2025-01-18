@@ -12,8 +12,8 @@ def update_config(input_channels, kernel_size, np_value):
 
 // Input Tensor Configuration
 #define INPUT_BATCH 1
-#define INPUT_HEIGHT 24
-#define INPUT_WIDTH 24 
+#define INPUT_HEIGHT 64
+#define INPUT_WIDTH 64 
 #define INPUT_CHANNELS {input_channels}
 
 // Kernel Configuration
@@ -248,20 +248,20 @@ for channels in channel_sizes:
 
                 if only_once == 1:
                     print(f"Compile Simple C model Started:")
-                    os.system("gcc -O2 -std=c99 -o conv.o simple_conv.c -lm ")
+                    os.system("gcc -O1 -std=c99 -o conv.o simple_conv.c -lm ")
                     print(f"Run Simple C model Started:")
                     os.system("./conv.o")
                     os.system("python3 compare_Window_Simple.py")
                     only_once = 0
 
                 print(f"Compile CHwise model Started:")
-                os.system(f"mpicc -O3 -o ch_conv_orig.o mpi_conv_scatter.c")
+                os.system(f"mpicc -O2 -o ch_conv_orig.o mpi_conv_scatter.c")
                 print(f"Run CHwise model Started:")
                 os.system(f"mpirun --allow-run-as-root -np {np_value} ./ch_conv_orig.o")
                 os.system("python3 compare_Window_CH.py")
 
                 print(f"Compile KRNwise model Started:")
-                os.system(f"mpicc -O3 -o kernel_conv.o kernel_wise_bcast.c")
+                os.system(f"mpicc -O2 -o kernel_conv.o kernel_wise_bcast.c")
                 print(f"Run KRNwise model Started:")
                 os.system(f"mpirun --allow-run-as-root -np {np_value} ./kernel_conv.o")
                 os.system("python3 compare_Window_KRN.py")
