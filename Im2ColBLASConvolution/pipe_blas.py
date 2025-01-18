@@ -253,7 +253,7 @@ for channels in channel_sizes:
 
                 os.system(f"mpicc -O3 -o ch_conv_orig.o channel_wise_blas_scatter.c -I/usr/include/x86_64-linux-gnu/openblas64-pthread -L/usr/lib/x86_64-linux-gnu/openblas64-pthread -lopenblas64 && mpirun --allow-run-as-root -np {np_value} ./ch_conv_orig.o")
                 os.system("python3 compare_Blas_CH.py")
-                os.system(f"mpicc -o kernel_conv.o kernel_wise_blas_bcast.c -I/usr/include/x86_64-linux-gnu/openblas64-pthread -L/usr/lib/x86_64-linux-gnu/openblas64-pthread -lopenblas64 && mpirun --allow-run-as-root -np {np_value} ./kernel_conv.o")
+                os.system(f"mpicc -O3 -o kernel_conv.o kernel_wise_blas_bcast.c -I/usr/include/x86_64-linux-gnu/openblas64-pthread -L/usr/lib/x86_64-linux-gnu/openblas64-pthread -lopenblas64 && mpirun --allow-run-as-root -np {np_value} ./kernel_conv.o")
                 os.system("python3 compare_Blas_KRN.py")
 
                 current_execution = np.array(collect_execution_times(filenames))  # Convert to numpy array

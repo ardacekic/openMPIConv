@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
         MPI_Finalize();
         return EXIT_FAILURE;
     }
-
+double start = MPI_Wtime();
     //Send Kernel To Processes
     int kernels_per_proc = NUM_KERNELS / num_procs;
     int num_elements = KERNEL_HEIGHT * KERNEL_HEIGHT * KERNEL_CHANNELS * kernels_per_proc;  // Elements per process
@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
 
 
     // Start timing
-    double start = MPI_Wtime();
+    
 
     // Perform the kernel-wise convolution
     kernel_wise_convolution(rank, num_procs,local_kernel);

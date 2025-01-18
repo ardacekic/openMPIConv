@@ -27,7 +27,7 @@ void channel_wise_convolution(int rank, int num_procs, int *local_input) {
     int (*local_output)[output_height][output_width] = calloc(NUM_KERNELS, sizeof(*local_output));
 
     // Scatter the input tensor to all processes
-    MPI_Barrier(MPI_COMM_WORLD);
+    //MPI_Barrier(MPI_COMM_WORLD);
     // Perform convolution on local input
     for (int k = 0; k < NUM_KERNELS; k++) {
         int flat_idx = 0;
@@ -109,6 +109,7 @@ int main(int argc, char **argv) {
         MPI_Finalize();
         return EXIT_FAILURE;
     }
+    double start = MPI_Wtime();
 
     int channels_per_proc = INPUT_CHANNELS / num_procs;
     int num_elements = INPUT_HEIGHT * INPUT_WIDTH * channels_per_proc;  // Elements per process
@@ -155,7 +156,6 @@ int main(int argc, char **argv) {
     }
     
 
-    double start = MPI_Wtime();
 
     channel_wise_convolution(rank, num_procs,local_input);
 
