@@ -6,13 +6,9 @@
 #include "test_kernel.h"
 #include <string.h>
 
-// Assuming the dimensions for input and kernel are defined in 'config.h'
-
-// Declare the output tensor globally
 int output_tensor[NUM_KERNELS][(INPUT_HEIGHT - KERNEL_HEIGHT + 2 * PADDING) / STRIDE + 1]
                             [(INPUT_WIDTH - KERNEL_WIDTH + 2 * PADDING) / STRIDE + 1];
 
-// Function to perform channel-wise convolution
 void channel_wise_convolution(int rank, int num_procs, int *local_input) {
     int channels_per_proc = INPUT_CHANNELS / num_procs;
     int num_elements = INPUT_HEIGHT * INPUT_WIDTH * channels_per_proc;  // Elements per process
